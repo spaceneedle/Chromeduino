@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="jquery-ui.min.css">
+    <script src="src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="src-min-noconflict/mode-c_cpp.js" type="text/javascript" charset="utf-8"></script>
+    <script src="jquery-2.1.1.min.js"></script>
+    <script src="jquery-ui.min.js"></script>
+    <script src="main.js"></script>
+
+
+  </head>
+  <body>
+        <div id="dark" class="overlay"></div>
+        <div id="connect_box" title="USB Connection" class="connectbox">
+          Please select a serial device or "demo" for no Arduino:<br/><br/>
+          <select id="port_list"><option>Please Wait...</option></select><br/><br/>
+  <span style="align: center"><button id="connect_button">Connect</button>
+    <button id="demo_button">Demo</button></span><br/><br/>
+          (Tip: If you don't see your device, plug in your Arduino and restart the app)
+      </div>
+    <div id="newsure" title="Are You Sure?" class="connectbox off">
+      Are you sure you want to delete this project?<br/><br/>
+                                                   
+      <a href="#" id="newproject" class="button">Yes</a> <a href="#" id="closenew" class="button">No</a>
+    </div>
+    <div id="terminal" class="terminal off"></div><div id="exitterm" class="exitterm off">X</div>
+    <div id="termstat" class="termstat off">115200 Baud | 8N1 | Echo | LF</div>
+    <div id="header" class="header">
+      <div id="newcheck" class="button">New</div>
+      <div id="load" class="button">Load</div>
+      <div id="save" class="button" style="border-color: #CCCCCC">Save</div>
+      <div id="check" class="button" style="border-color: #CCCCCC">Check</div>
+      <a href="#" id="program" class="button">Program</a>
+      <a href="#" id="library" class="button" style="border-color: #CCCCCC">Libraries...</a>
+      <a href="#" id="term" class="button right">Term</a>
+    </div>
+    <div id="gap" class="gap"></div>
+    <div id="mainarea">
+      <pre id="editor">
+/*
+  Blink
+  Turns on an LED on for one second, then off for one second, repeatedly.
+ 
+  This example code is in the public domain.
+ */
+ 
+// Pin 13 has an LED connected on most Arduino boards.
+// give it a name:
+int led = 13;
+
+// the setup routine runs once when you press reset:
+void setup() {                
+  // initialize the digital pin as an output.
+  pinMode(led, OUTPUT); 
+  Serial.begin(115200);
+}
+
+// the loop routine runs over and over again forever:
+void loop() {
+  Serial.println("Setting LED to HIGH");
+  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(500);               // wait for a second
+  Serial.println("Setting LED to LOW");
+  digitalWrite(led, LOW);    // turn the LED off by making the voltage LOW
+  delay(500);               // wait for a second
+}
+
+</pre>
+    </div>
+<div id="bar" class="progressbar"><div id="progress-label" class="progress-label">Ready</div></div>
+  </body>
+</html>

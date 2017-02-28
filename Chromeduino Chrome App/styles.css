@@ -1,0 +1,127 @@
+body{}
+
+.button {
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffffff), color-stop(1, #ffffff) );
+	background:-moz-linear-gradient( center top, #ffffff 5%, #ffffff 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ffffff');
+	background-color:#ffffff;
+	-webkit-border-top-left-radius:0px;
+	-moz-border-radius-topleft:0px;
+	border-top-left-radius:0px;
+	-webkit-border-top-right-radius:0px;
+	-moz-border-radius-topright:0px;
+	border-top-right-radius:0px;
+	-webkit-border-bottom-right-radius:0px;
+	-moz-border-radius-bottomright:0px;
+	border-bottom-right-radius:0px;
+	-webkit-border-bottom-left-radius:0px;
+	-moz-border-radius-bottomleft:0px;
+	border-bottom-left-radius:0px;
+	text-indent:0;
+	border:1px solid #000000;
+	display:inline-block;
+	color:#000000;
+	font-family:arial;
+	font-size:15px;
+	font-weight:bold;
+	font-style:normal;
+	height:25px;
+	line-height:25px;
+	width:100px;
+	text-decoration:none;
+	text-align:center;
+}
+.button:hover {
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffffff), color-stop(1, #ffffff) );
+	background:-moz-linear-gradient( center top, #ffffff 5%, #ffffff 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ffffff');
+	background-color:#ffffff;
+}.button:active {
+	position:relative;
+	top:1px;
+}
+
+.gap { height: 5px; }
+
+.right { float: right; }
+
+.mainarea {  overflow-y: scroll; width: 100%; height: 800px; }
+
+textarea {  resize: none; border-color: #000000; border-left: none; width: 750px; height: 600px; }
+
+.numbers { float: left; width: 20px; height: 600px; border: 1px solid; white-space: pre-line; }
+
+.console {
+  width: 800px; height: 140px; background-color: black; color: #11FF00; font-family: courier; font-size: 12px; white-space: pre-line; overflow-y: scroll;
+  padding: 4px;
+}
+
+#editor {
+position: relative;
+ height: 600px;
+  /*  
+        margin: 0;
+       position: absolute; 
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+  */
+ }
+
+.off { 
+display: none;
+}
+
+.overlay {
+    background-color: #000;
+    bottom: 0;
+   /* display: none; */
+    left: 0;
+    opacity: 0.5;
+    filter: alpha(opacity = 50); /* IE7 & 8 */
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 99;
+}
+
+.connectbox { 
+background-color: #ffffff;
+  opacity: 1.0;
+  z-index: 400;
+  border: 1px solid;
+  position: absolute;
+  top: 200px;
+  left: 200px;
+  padding: 10px;
+}
+
+  .ui-progressbar {
+    position: relative;
+  }
+  .progress-label {
+    position: absolute;
+    left: 5%;
+    bottom: 5px;
+    color: #ffffff; font-weight: bold;
+  }
+
+.terminal {
+    width: 100%; height: 95%; background-color: black; color: #ffffff; font-family: courier; font-size: 12px; white-space: pre-line; overflow-y: scroll;
+  padding: 4px; top: 0px; left: 0px; position: absolute; z-index: 600;
+  
+}
+
+.termstat { 
+ width: 100%; position: absolute; left: 0px; bottom: 10px; background-color: black; color: #00ff00; font-family: courier; font-size: 14px; white-space: pre-line;
+z-index: 900;
+}
+
+.exitterm { 
+position: absolute;
+  right: 10px;
+  top: 2px;
+  font-size: 32px;
+  color: #ffffff; z-index: 900;
+}
