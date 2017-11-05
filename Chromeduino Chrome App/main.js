@@ -1,6 +1,8 @@
 String.prototype.lines = function() { return this.split(/\r*\n/); }
 String.prototype.lineCount = function() { return this.lines().length; }
 
+chrome.serial.onReceiveError.addListener(console.error);
+
 var hexfile = "";
 var editor = "";
 var defaultsketch = "void setup()\n {\n \n }\n\nvoid loop()\n {\n \n }\n";
@@ -97,15 +99,19 @@ $( document ).ready(function(){
   $("#program").click(function() {
     termmode = 0;
     $("#bar").progressbar({value: 10}); $("#progress-label").text("Packaging file...");
-    var sketchfile = btoa(editor.getSession().getValue());
+    var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
     $("#bar").progressbar({value: 20}); $("#progress-label").text("Uploading to compiler server...");
-    $.post( "http://www.intentionalradiator.com/arduino/buildapi.php", { sketch: sketchfile}, function( data ) { 
-      console.log(data);
-    $("#bar").progressbar({value: 30}); $("#progress-label").text("Processing results...");
-    hexfileascii = atob(data);
-    console.log("Got file contents, running hex fixer");
-    $("#bar").progressbar({value: 40}); $("#progress-label").text("Decoding Intel Hex file...");
-    fixHex();
+    $.post( "http://localhost:3000/compile", { sketch: sketchfile, board: "arduino:avr:uno"}, function( data ) {
+        console.log(data);
+        if(!data.success){
+            $("#bar").progressbar({value: 0}); $("#progress-label").text(data.msg);
+            return console.error(data.stderr || data.msg);
+        }
+        $("#bar").progressbar({value: 30}); $("#progress-label").text("Processing results...");
+        hexfileascii = atob(data.hex);
+        console.log("Got file contents, running hex fixer");
+        $("#bar").progressbar({value: 40}); $("#progress-label").text("Decoding Intel Hex file...");
+        fixHex();
     });
   
  
@@ -120,6 +126,7 @@ document.querySelector('#connect_button').addEventListener('click', function() {
   // get the device to connect to
   var dropDown = document.querySelector('#port_list');
   var devicePath = dropDown.options[dropDown.selectedIndex].value;
+  console.log(devicePath);
   // connect
 connection.connect(devicePath);
   $("#connect_box").toggle("explode");
