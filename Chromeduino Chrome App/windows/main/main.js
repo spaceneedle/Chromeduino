@@ -1,7 +1,68 @@
 String.prototype.lines = function() { return this.split(/\r*\n/); }
 String.prototype.lineCount = function() { return this.lines().length; }
 
-chrome.serial.onReceiveError.addListener(console.error);
+let terminalwindow = null;
+let serverwindow = null;
+let terminal = null;
+let verbose_logging = false;
+let server_address = "";
+const valid_server_version = (ver) =>{
+    if(typeof ver !== 'string') return false;
+    let required = [0, 0, 1];
+    let given  = ver.split('.');
+    for(let i in given){
+        let sect = Number(given[i]);
+        if(isNaN(sect)) return false;
+        if(sect > required[i]) return true;
+        if(sect < required[i]) return false;
+    }
+    return true;
+};
+const open_server_menu = (showError) => {
+    if(terminalwindow) return terminalwindow.show();
+    chrome.app.window.create("windows/servers/servers.html", {
+        "bounds": {
+            "width": 400,
+            "height": 700
+        }
+    }, serwin => {
+        serverwindow = serwin;
+        serverwindow.onClosed.addListener(()=>{
+            serverwindow = null;
+        });
+        serverwindow.contentWindow.showError = !!showError;
+        serverwindow.contentWindow.server_address = server_address;
+        serverwindow.contentWindow.onServerChange = new chrome.Event;
+        serverwindow.contentWindow.onServerChange.addListener(seradd=>{
+            server_address = seradd;
+        });
+    });
+};
+chrome.storage.sync.get('settings.server', function(data) {
+    server_address = data['settings.server'] || "";
+    if(server_address === "") return open_server_menu();
+    $.get(server_address + '/version').done(body=>{
+        if(typeof body === 'string'){
+            try{
+                body = JSON.parse(body);
+            } catch(e){
+                console.error("invalid version format returned by server: " + body);
+                return open_server_menu(true);
+            }
+        }
+        if(typeof body.version !== 'string' || typeof body.program !== 'string' || body.program !== 'chromeduino'){
+            console.error("invalid version format returned by server: " + body);
+            return open_server_menu(true);
+        }
+        if(!valid_server_version(body.version)) {
+            console.error("invalid server version: " + body);
+            return open_server_menu(true);
+        }
+    }).fail(()=>{
+        console.error("could not reach server");
+        return open_server_menu(true);
+    });
+});
 
 var hexfile = "";
 var editor = "";
@@ -9,10 +70,6 @@ var defaultsketch = "void setup()\n {\n \n }\n\nvoid loop()\n {\n \n }\n";
 var workingfile = "";
 //var termmode = 1;
 var keytx = 0;
-
-let terminalwindow = null;
-let terminal = null;
-let verbose_logging = false;
 
 $( document ).ready(function(){
   
@@ -123,7 +180,7 @@ $( document ).ready(function(){
     $("#bar").progressbar({value: 10}); $("#progress-label").text("Packaging file...");
     var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
     $("#bar").progressbar({value: 20}); $("#progress-label").text("Uploading to compiler server...");
-    $.post( "http://localhost:3000/compile", { sketch: sketchfile, board: "arduino:avr:uno"}, function( data ) {
+    $.post( server_address + "/compile", { sketch: sketchfile, board: "arduino:avr:uno"}, function( data ) {
         console.log(data);
         if(!data.success){
             $("#bar").progressbar({value: 0}); $("#progress-label").text(data.msg);

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Choose a Server</title>
+
+    <link rel="stylesheet" href="servers.css" />
+    <link rel="stylesheet" href="../../resources/jquery-ui.min.css">
+
+</head>
+<body>
+
+<div class="header">
+    <span class="errmsg">Your selected compile server is either out-dated, unavailable or non-existent. Please select a new one.</span>
+    <span class="errclose">x</span>
+</div>
+<ul class="server-list"></ul>
+<div class="footer">
+    <input type="text" id="serverInput" name="cmdInput" placeholder="http://Custom-Server.com"/>
+    <button id="serverSend" type="button">Connect</button>
+</div>
+
+<script id="server-item-template" type="text/x-handlebars-template">
+    <li class="server-item">
+
+    </li>
+</script>
+
+
+<script src="../../resources/jquery-2.1.1.min.js"></script>
+<script src="../../resources/jquery-ui.min.js"></script>
+<script src="servers.js"></script>
+</body>
+</html>

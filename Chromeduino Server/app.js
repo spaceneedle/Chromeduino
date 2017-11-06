@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.set("trust proxy", 1); // trust first proxy
 
-app.get('/version', (req, res) => res.json({version}));
+app.get('/version', (req, res) => res.json({version, program: "chromeduino"}));
 
 app.post('/compile', (req, res) => {
     if(typeof req.body.sketch !== 'string' || typeof req.body.board !== 'string')
