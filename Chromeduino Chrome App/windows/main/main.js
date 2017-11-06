@@ -7,8 +7,12 @@ var hexfile = "";
 var editor = "";
 var defaultsketch = "void setup()\n {\n \n }\n\nvoid loop()\n {\n \n }\n";
 var workingfile = "";
-var termmode = 1;
+//var termmode = 1;
 var keytx = 0;
+
+let terminalwindow = null;
+let terminal = null;
+let verbose_logging = false;
 
 $( document ).ready(function(){
   
@@ -30,12 +34,30 @@ $( document ).ready(function(){
      workingfile = "";
    });  
   
-   $("#term").click(function(e) { 
-   $("#terminal").toggle("off");
-        $("#exitterm").toggle("off");
-     $("#termstat").toggle("off");
-     keytx = 1;
-   });  
+    $("#term").click(function(e) {
+        if(terminalwindow) return terminalwindow.show();
+        chrome.app.window.create("windows/terminal/terminal.html", {
+           "bounds": {
+               "width": 800,
+               "height": 350
+           }
+        }, termwin => {
+            terminalwindow = termwin;
+            terminalwindow.onClosed.addListener(()=>{
+                terminalwindow = null;
+                terminal = null;
+            });
+
+            let init_term = () => {
+                terminal = terminalwindow.contentWindow.terminal;
+                if(!terminal) return setTimeout(init_term, 10);
+                terminal.initBaud(connection.baud);
+                terminal.onBaud.addListener(baud=>connection.setBaud(baud));
+                terminal.onCommand.addListener(msg=>connection.send(msg));
+            };
+            terminalwindow.contentWindow.addEventListener('load', init_term);
+        });
+    });
     
    $("#exitterm").click(function(e) { 
    $("#terminal").toggle("off");
@@ -242,7 +264,6 @@ responses = {
 
 var DTRRTSOn = { dtr: true, rts: true }; 
 var DTRRTSOff = { dtr: false, rts: false };
-var SerialOpts = {bitrate: 115200 };
 
 function transmitPacket(buffer,delay) {
   setTimeout(function() {
@@ -343,8 +364,8 @@ function hexpad16(num,size) {
 var ab2str = function(buf) {
   var bufView = new Uint8Array(buf);
   var encodedString = String.fromCharCode.apply(null, bufView);
-  console.log(encodedString);
-  return decodeURIComponent(escape(encodedString));
+  if(verbose_logging) console.log(encodedString);
+  return decodeURIComponent(encodeURIComponent(encodedString));
 };
 
 /* Converts a string to UTF-8 encoding in a Uint8Array; returns the array buffer. */
@@ -365,6 +386,7 @@ var str2ab = function(str) {
 
 var SerialConnection = function() {
   this.connectionId = -1;
+  this.baud = 115200;
   this.lineBuffer = "";
   this.boundOnReceive = this.onReceive.bind(this);
   this.boundOnReceiveError = this.onReceiveError.bind(this);
@@ -402,14 +424,15 @@ SerialConnection.prototype.onReceive = function(receiveInfo) {
   for(x = 0; x < buffer.length; x++ )
      { decoded += "[" + buffer.charCodeAt(x).toString(16) + "]"; }
   // console.log(n+" length: "+buff.length);
-  console.log(n+" received data: "+decoded);
-  if(termmode == 1) { 
+  if(verbose_logging) console.log(n+" received data: "+decoded);
+  /*if(termmode == 1) {
 
-/*    $("#terminal").text() = tlen.substr(0,tlen.length-1); */
- /* $("#terminal").append(buffer+"&#9608;"); } */
+//    $("#terminal").text() = tlen.substr(0,tlen.length-1);
+ // $("#terminal").append(buffer+"&#9608;"); }
     
     $("#terminal").append(buffer); var elem = document.getElementById('terminal');
-    elem.scrollTop = elem.scrollHeight; } 
+    elem.scrollTop = elem.scrollHeight; } */
+  if(terminal) terminal.message(buffer);
   this.lineBuffer = "";
   var index;
   while ((index = this.lineBuffer.indexOf('\n')) >= 0) {
@@ -421,7 +444,7 @@ SerialConnection.prototype.onReceive = function(receiveInfo) {
 
 SerialConnection.prototype.onReceiveError = function(errorInfo) {
   if (errorInfo.connectionId === this.connectionId) {
-    this.onError.dispatch(errorInfo.error);
+    this.onError.dispatch(errorInfo);
   }
 };
 
@@ -434,7 +457,7 @@ SerialConnection.prototype.getDevices = function(callback) {
     
     
 SerialConnection.prototype.connect = function(path) {
-  serial.connect(path, SerialOpts, this.onConnectComplete.bind(this))
+  serial.connect(path, {bitrate: this.baud}, this.onConnectComplete.bind(this))
 };
 
 SerialConnection.prototype.send = function(msg) {
@@ -445,119 +468,32 @@ SerialConnection.prototype.send = function(msg) {
 };
 
 SerialConnection.prototype.disconnect = function() {
-  if (this.connectionId < 0) {
-    throw 'Invalid connection';
-  }
-  
+    if (this.connectionId < 0) {
+        throw 'Invalid connection';
+    }
+    serial.disconnect(this.connectionId, success => {
+        if(!success) console.error('could not disconnect');
+        this.connectionId = -1;
+    });
+};
+
+SerialConnection.prototype.setBaud = function(baud) {
+    if (this.connectionId < 0) {
+        throw 'Invalid connection';
+    }
+    if(this.baud === baud) return;
+    serial.update(this.connectionId, {bitrate: baud}, success => {
+        if(success) {
+            console.log("Baud for connection set to " + baud);
+            this.baud = baud;
+        }
+        else console.error("Could not set baud rate.");
+    });
 };
 
 
 
 var connection = new SerialConnection();
-
-
-/* this is the generic serial port line parser. we just check as stuff comes in async and then react to it */
-
-connection.onReadLine.addListener(function(line) {
-  console.log("RX line[" + line + "]");
-  lasttext = line;
-  if(pdustate == 1){
-    pdustate = 0;
-    log(smsDecode(line));
-    connection.send("AT+CMGD="+msgid+"\r");         // we impuslively delete everything we get, last thing we need is full SMS memory..which is easy to do after 35-40 msgs.
-   
-  }
-  if(line.indexOf("+CMTI") == 0)           /* if we get a message notification indicator */
-    {msgid = line.split(",")[1].trim(); log("We got message "+msgid); connection.send("AT+CMGR="+msgid+"\r"); 
-     }
-  if(line.indexOf("+CMGR:") == 0) {         /* if we get the result from a read */
-  pdustate = 1;
-  }
-  if(line.indexOf("+CMGS:000") == 0) {       /* if a message transmission was successful */
-    sent.play();
-    if(fileState == 0) {                    /* disable the animations and make it look like it was successful */
-    disable = 0;
-    $("#entry").prop("disabled", false);
-    $("#entry").css("background-color","#ffffff");
-    $("#entry").css('background-image', 'url(1pixel.gif)').css('background-repeat','no-repeat');
-    }
-    
-    /* file transfer over SMS support. Works great..mostly..not ready yet... ive sent 2kB jpegs so far.. */
-    
-    if(fileState == 1) { sendFilePacket(); }         
-    else if(fileState == 2) {
-      filePacketPointer++;
-      fileByteOffset = fileByteOffset + packetSize;
-      sendFilePacket();
-    }
-    if(fileState == 3) { 
-      sendFileEOF();
-    }
-    if(fileState == 4) {
-      fileState = 0;
-      var a = parseInt(fileHandle,16); 
-      a=a+1; 
-      fileHandle = hexpad(a.toString(16));
-    }
-  }
-  
-  /* handle SMS transmission errors. Typical 9555 operating proceedure is to just throw away the message you spend a half hour 
-  trying to type on a DTMF pad. I HATE THAT. Lets make the experience better! */
-  
-  if(line.indexOf("+CMS ERROR") == 0) {
-    error.play();
-    if(fileState == 0) {
-    disable = 0;
-    $("#entry").prop("disabled", false);
-    $("#entry").val(lastchat);
-    $("#entry").css("background-color","#ff8888");  
-    $("#smserror").dialog(open);
-    $("#entry").css('background-image', 'url(1pixel.gif)').css('background-repeat','no-repeat');
-    }
-    
-    /* if we were sending a file, this retransmits the SMS so it doesnt get lost */
-    
-    if(fileState == 1) {
-       fileTransmit(fileName,fileDescription,fileBinary,fileHandler,fileHandle,fileEndpoint);
-    }
-    if(fileState == 2) {
-      sendFilePacket();
-    }
-    if(fileState == 4) {
-      sendFileEOF();
-    }
-  }
-  
-  /* If we get our signal quality message back, show a cute little signal indicator */
-  
-  if(line.indexOf("+CSQF:") == 0) { 
-    console.log(line);
-    var quality = line.split(":")[1].split("\r")[0].trim();
-     console.log("["+quality+"]");
-    if(quality == "5") { document.getElementById("signal").innerHTML ="&#9635;&#9635;&#9635;&#9635;&#9635;";  }
-    if(quality == "4") { document.getElementById("signal").innerHTML ="&#9635;&#9635;&#9635;&#9635;&#9633;";  }
-    if(quality == "3") { document.getElementById("signal").innerHTML ="&#9635;&#9635;&#9635;&#9633;&#9633;";  }
-    if(quality == "2") { document.getElementById("signal").innerHTML ="&#9635;&#9635;&#9633;&#9633;&#9633;";  }
-    if(quality == "1") { document.getElementById("signal").innerHTML ="&#9635;&#9633;&#9633;&#9633;&#9633;"; }
-    if(quality == "0") { document.getElementById("signal").innerHTML ="No Service";  }
-  }
-  
-  /* parse out the geolocation message and then provide position information */
-  
-  if(line.indexOf("-MSGEO:") == 0) { 
-  var x = line.split(" ")[1].split(",")[0];
-  var y = line.split(" ")[1].split(",")[1];
-  var z = line.split(" ")[1].split(",")[2];
-  var epoch = line.split(" ")[1].split(",")[3].trim();
-  console.log("GEO info - x: "+x+" y: "+y+" z: "+z+" epoch: "+epoch);
-  var result = outputResult(x,y,z,epoch);
-  console.log(result);
-    log("Lat: "+result[0]+" Lon: "+result[1]+" Time: "+result[2]);  
-    document.getElementById("pos").innerHTML = "Lat: "+result[0]+" Lon: "+result[1];
-    
-  }
-
-});
 
 // Populate the list of available devices
 connection.getDevices(function(ports) {

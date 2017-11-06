@@ -1,3 +1,10 @@
 [
-  "http://localhost:3000"
+  {
+    "name": "Local Test Server",
+    "desc": "A compile server running on your local machine",
+    "address": "http://localhost:3000",
+    "location": "Under Your Nose",
+    "owner": "You",
+    "site": "http://example.com/self-promotion.html"
+  }
 ]
