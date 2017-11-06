@@ -383,7 +383,7 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   serial.onReceive.addListener(this.boundOnReceive);
   serial.onReceiveError.addListener(this.boundOnReceiveError);
   this.onConnect.dispatch();
-    serial.setControlSignals(connection.connectionId,DTRModeOn,function(result) { 
+    serial.setControlSignals(connection.connectionId,DTRRTSOn,function(result) {
       console.log("DTR on: " + result); });
    
 };
