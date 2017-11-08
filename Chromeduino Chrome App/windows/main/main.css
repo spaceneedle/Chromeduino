@@ -1,0 +1,62 @@
+body {
+    margin: 0;
+    height: 100vh;
+}
+
+.header{
+    z-index: 2;
+    margin-bottom: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+#mainarea {
+    height: calc(100vh - 35px);
+}
+
+#editor {
+    min-height: 6em;
+    margin: 0;
+}
+
+.console {
+    background: black;
+    color: white;
+    font-family: monospace;
+    white-space: pre-line;
+    overflow-y: auto;
+    user-select: text;
+    font-size: 1.3em;
+    padding-left: 1em;
+}
+
+.stderr {
+    color: red;
+}
+
+.progressbar-bar{
+    cursor: ns-resize;
+    color: white;
+}
+
+.progress-label {
+    height: 100%;
+    line-height: 2em;
+    margin-left: 1em;
+    font-weight: bold;
+}
+
+.label-error {
+    color: maroon;
+}
+
+#port_list option[value="none"]{
+    display: none;
+}
+
+.pure-menu-children {
+    box-shadow: -1px 1px 3px rgba(0,0,0,0.5);
+}
+
+#board_list {
+    max-width: 10em;
+}

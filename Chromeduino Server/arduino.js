@@ -32,7 +32,7 @@ const process_file = (path, cb)=>{
 class Arduino {
     constructor (arduino_dir) {
         this.dir = arduino_dir;
-        this.buildcmd = `"${this.dir}/arduino-builder" -hardware "${this.dir}/hardware" -libraries "${this.dir}/libraries" -verbose`;
+        this.buildcmd = `"${this.dir}/arduino-builder" -hardware "${this.dir}/hardware" -libraries "${this.dir}/libraries"`;
         let tools  = ['/hardware/tools', '/tools', '/tools-builder'];
         for(let i in tools) this.buildcmd += ` -tools "${this.dir}${tools[i]}"`;
         this.libraries = [];
@@ -81,10 +81,10 @@ class Arduino {
                         for(let j in data[i].menu.cpu){
                             let boardcpu = board + ':cpu=' + j;
                             let cpuname = data[i].menu.cpu[j].name || j;
-                            boards[boardcpu] = {name: name + ' / ' + cpuname};
+                            boards[boardcpu] = {name: name + ' / ' + cpuname, upload_speed: data[i].menu.cpu[j].upload.speed};
                         }
                     } else {
-                        boards[board] = {name: name};
+                        boards[board] = {name: name, upload_speed: data[i].upload.speed};
                     }
                 }
                 this.boards = boards;
@@ -93,9 +93,10 @@ class Arduino {
         });
     }
 
-    compile(code, board="arduino:avr:uno"){
+    compile(code, board="arduino:avr:uno", verbose){
         return new Promise((resolve, reject) => {
             if(!this.boards[board]) return resolve({success: false, msg: "Unknown board provided"});
+            verbose = verbose ? '-verbose' : '';
             tmp.dir({prefix: 'chromeduino-', unsafeCleanup: true}, (err, path, cleanup)=>{
                 if(err) return reject(err);
                 console.log(path);
@@ -104,10 +105,10 @@ class Arduino {
                     if(err) return reject(err);
                     fs.mkdir(path+'/compiled', err=>{
                         if(err) return reject(err);
-                        let cmd = `${this.buildcmd} -fqbn ${board} -build-path "${path}/compiled" "${path}/${codeFile}"`;
+                        let cmd = `${this.buildcmd} ${verbose} -fqbn ${board} -build-path "${path}/compiled" "${path}/${codeFile}"`;
                         exec(cmd, (err, stdout, stderr)=>{
-                            stderr = stderr.replace(this.dir, '~/arduino-1.8.5');
-                            stdout = stdout.replace(this.dir, '~/arduino-1.8.5');
+                            stderr = stderr.split(this.dir).join('~/arduino-1.8.5');
+                            stdout = stdout.split(this.dir).join('~/arduino-1.8.5');
                             if(err){
                                 cleanup();
                                 return resolve({success: false, msg: errorCodes[err.code], code: err.code, stdout, stderr});

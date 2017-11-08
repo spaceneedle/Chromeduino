@@ -6,6 +6,28 @@ let serverwindow = null;
 let terminal = null;
 let verbose_logging = false;
 let server_address = "";
+let boards = {};
+
+const new_server = ()=>{
+    chrome.storage.sync.set({ "settings.server": server_address });
+    $.get(server_address + '/boards').done(body=>{
+        body = validate_return(body);
+        if(!body) return;
+        boards = body;
+        chrome.storage.local.get('settings.lastBoard', function(data) {
+            let lastBoard = data['settings.lastBoard'] || "none";
+            let board_list = $('#board_list');
+            let html = '<option value="none">Select a Board</option>';
+            let exists = false;
+            for(let i in boards){
+                html+= `<option value="${i}">${boards[i].name}</option>`;
+                if(lastBoard === i) exists = true;
+            }
+            board_list.html(html);
+            board_list.val(exists ? lastBoard : 'none');
+        });
+    });
+};
 
 const open_server_menu = (showError) => {
     if(terminalwindow) return terminalwindow.show();
@@ -29,7 +51,7 @@ const open_server_menu = (showError) => {
             server_address = seradd;
             serverwindow.close();
             chrome.app.window.current().show();
-            chrome.storage.sync.set({ "settings.server": server_address });
+            new_server();
         });
     });
 };
@@ -39,159 +61,303 @@ chrome.storage.sync.get('settings.server', function(data) {
     if(server_address === "") return open_server_menu();
     check_server(server_address, (success, version)=>{
         if(!success) open_server_menu(true);
+        else new_server();
     });
 });
 
-const set_progress = (percent, msg, c1 = 'black', c2 = 'grey')=>{
-    $('#bar').css('background', `linear-gradient(to right, ${c1} , ${c1} ${percent}%, ${c2} ${percent}%, ${c2} )`);
-    if(msg) $("#progress-label").text(msg);
+const set_progress = (percent, msg, isErrored, c1 = 'black', c2 = 'grey')=>{
+    $('.progressbar-bar').css('background', `linear-gradient(to right, ${c1} , ${c1} ${percent}%, ${c2} ${percent}%, ${c2} )`);
+    let label = $(".progress-label");
+    if(msg) label.text(msg);
+    if(isErrored) label.addClass('label-error');
+    else label.removeClass('label-error');
+};
+
+const console_el = $('.console');
+const spanout = $('.stdout');
+const spanerr = $('.stderr');
+const display_console = (stdout, stderr, joiner=false) => {
+
+    if(joiner === false){
+        spanout.text('');
+        spanerr.text('');
+    }
+    if(stdout) spanout.text(spanout.text() ? spanout.text() + joiner + stdout : stdout);
+    if(stderr) spanerr.text(spanerr.text() ? spanerr.text() + joiner + stderr : stderr);
+    console_el.scrollTop(console_el.prop('scrollHeight'));
+};
+
+const ensure_connection = (cb) => {
+    if(!cb) cb = ()=>{};
+    if(connection.isConnected())return cb(true);
+    let devicePath = $('#port_list').val();
+    if(!devicePath || devicePath === '' || devicePath === 'none'){
+        display_console("", "Port not selected, please go to Tools > Ports.");
+        return cb(false);
+    }
+    let done = function(){
+        connection.onConnect.removeListener(done);
+        connection.onError.removeListener(fail);
+        cb(true);
+        chrome.storage.local.set({'settings.lastPort': devicePath});
+    };
+    let fail = function(err){
+        console.error(err);
+        connection.onConnect.removeListener(done);
+        connection.onError.removeListener(fail);
+        cb(false);
+    };
+    connection.onConnect.addListener(done);
+    connection.onError.addListener(fail);
+    connection.connect(devicePath);
+};
+
+const display_ports = () => {
+    // Populate the list of available devices
+    connection.getDevices(function(ports) {
+        console.log(ports);
+        const dropDown = document.querySelector('#port_list');
+        dropDown.innerHTML = "";
+        ports.unshift({displayName: "Select a Port", path: "none"});
+
+        chrome.storage.local.get('settings.lastPort', function(data) {
+            let lastPort = data['settings.lastPort'] || "none";
+            let exists = false;
+
+            ports.forEach(function (port) {
+                let displayName = port.displayName ? `${port.displayName} (${port.path})` : port.path;
+                if(port.path === lastPort) exists = true;
+                if(port.path === 'none') displayName = port.displayName;
+
+                let newOption = document.createElement("option");
+                newOption.text = displayName;
+                newOption.value = port.path;
+                dropDown.appendChild(newOption);
+            });
+            if(exists) $(dropDown).val(lastPort);
+        });
+    });
 };
 
 var hexfile = "";
-var editor = "";
+var editor = null;
 var defaultsketch = "void setup()\n {\n \n }\n\nvoid loop()\n {\n \n }\n";
 var workingfile = "";
-//var termmode = 1;
+var termmode = 1;
 var keytx = 0;
 
 $( document ).ready(function(){
-  
-  
-   $("#newcheck").click(function(e) { 
-   $("#dark").toggle();
-   $("#newsure").toggle("off");
-   });  
 
-   $("#closenew").click(function(e) { 
-   $("#dark").toggle();
-   $("#newsure").toggle("off");
-   });  
-  
-   $("#newproject").click(function(e) { 
-   $("#dark").toggle();
-   $("#newsure").toggle("off");
-     editor.getSession().setValue(defaultsketch);
-     workingfile = "";
-   });  
+
+    $.get('./blink.ino').done(text=>{
+        $('#editor').text(text);
+    }).always(()=>{
+        editor = ace.edit("editor");
+        editor.setTheme("ace/theme/xcode");
+        editor.getSession().setMode("ace/mode/c_cpp");
+        console.log("ready");
+
+        Split(['#editor', '.console'], {
+            sizes: [80, 20],
+            minSize: 100,
+            direction: 'vertical',
+            gutter: (index, direction) => {
+                const gutter = document.createElement('div');
+                gutter.className = `progressbar-bar gutter gutter-${direction}`;
+                const label = document.createElement('div');
+                label.className = 'progress-label';
+                gutter.appendChild(label);
+                return gutter;
+            },
+            gutterStyle: (dimension, gutterSize)=>{
+                return {'min-height': '2em'};
+            },
+            onDrag: () => {
+                editor.resize();
+            },
+            onDragEnd: () => {
+                editor.resize();
+            }
+        });
+        set_progress(0, "Welcome");
+    });
+
+    display_ports();
+    $('#refresh-ports').click(function(){
+        display_ports();
+        $(this).find('i').addClass('fa-spin');
+        setTimeout(()=>{
+            $(this).find('i').removeClass('fa-spin');
+        }, 500);
+    });
+
+    $('#change-server').click(e=>{
+        open_server_menu(false);
+    });
+
+    $('#board_list').change(function(e){
+        let value = $(this).val();
+        if(!value || value === '' || value === 'none') return;
+        chrome.storage.local.set({'settings.lastBoard': value});
+    });
+
+    $("#newcheck").click(function(e) {
+        $("#dark").toggle();
+        $("#newsure").toggle("off");
+    });
+
+    $("#closenew").click(function(e) {
+        $("#dark").toggle();
+        $("#newsure").toggle("off");
+    });
+
+    $("#newproject").click(function(e) {
+    $("#dark").toggle();
+    $("#newsure").toggle("off");
+        editor.getSession().setValue(defaultsketch);
+        workingfile = "";
+    });
   
     $("#term").click(function(e) {
         if(terminalwindow) return terminalwindow.show();
-        chrome.app.window.create("windows/terminal/terminal.html", {
-           "bounds": {
-               "width": 800,
-               "height": 350
-           }
-        }, termwin => {
-            terminalwindow = termwin;
-            terminalwindow.onClosed.addListener(()=>{
-                terminalwindow = null;
-                terminal = null;
-            });
+        ensure_connection(success=> {
+            if(!success) return;
+            chrome.app.window.create("windows/terminal/terminal.html", {
+                "bounds": {
+                    "width": 800,
+                    "height": 350
+                }
+            }, termwin => {
+                terminalwindow = termwin;
+                terminalwindow.onClosed.addListener(() => {
+                    terminalwindow = null;
+                    terminal = null;
+                    if(termmode === 1) connection.disconnect();
+                });
 
-            let init_term = () => {
-                terminal = terminalwindow.contentWindow.terminal;
-                if(!terminal) return setTimeout(init_term, 10);
-                terminal.initBaud(connection.baud);
-                terminal.onBaud.addListener(baud=>connection.setBaud(baud));
-                terminal.onCommand.addListener(msg=>connection.send(msg));
-            };
-            terminalwindow.contentWindow.addEventListener('load', init_term);
+                let init_term = () => {
+                    terminal = terminalwindow.contentWindow.terminal;
+                    if (!terminal) return setTimeout(init_term, 10);
+                    terminal.initBaud(connection.baud);
+                    terminal.onBaud.addListener(baud => connection.setBaud(baud));
+                    terminal.onCommand.addListener(msg => connection.send(msg));
+                };
+                terminalwindow.contentWindow.addEventListener('load', init_term);
+            });
         });
     });
     
-   $("#exitterm").click(function(e) { 
-   $("#terminal").toggle("off");
-   $("#exitterm").toggle("off");
-   $("#termstat").toggle("off");
-    keytx = 0;
-   });  
-      
-   $( document ).keypress(function(e) { 
-   if(keytx == 0) { return; }
-   $("#terminal").append(d2b(e.keyCode));
-     connection.send(d2b(e.keyCode));
-    var elem = document.getElementById('terminal');
-    elem.scrollTop = elem.scrollHeight;
-   });
-   
-   $("#savefile").click(function(e) { 
-   if(workingfile != "") { 
-     set_progress(0, "Saved.");
-     return;
-   }
-   
-   });  
+    $("#exitterm").click(function(e) {
+        $("#terminal").toggle("off");
+        $("#exitterm").toggle("off");
+        $("#termstat").toggle("off");
+        keytx = 0;
+    });
+
+    $( document ).keypress(function(e) {
+        if(keytx === 0) { return; }
+        $("#terminal").append(d2b(e.keyCode));
+        connection.send(d2b(e.keyCode));
+        var elem = document.getElementById('terminal');
+        elem.scrollTop = elem.scrollHeight;
+    });
+
+    $("#savefile").click(function(e) {
+        if(workingfile !== "") {
+            set_progress(0, "Saved.");
+            return;
+        }
+    });
     
   
-   $("#load").click(function(){
-   chrome.fileSystem.chooseEntry({type: 'openWritableFile'}, function(writeEntry) {
-     console.log(writeEntry);
-    writeEntry.file(function(file) {
-      console.log(file);
-      var reader = new FileReader();
-      reader.onerror = function(stuff) {
-         log("error", stuff)
-         log("\n");
-         log (stuff.getMessage())
-         log("\n");
-         }
-      
-      
-      reader.onloadend = function(e) {
-        editor.getSession().setValue(e.target.result);
-      };
+    $("#load").click(function(){
+        chrome.fileSystem.chooseEntry({type: 'openWritableFile'}, function(writeEntry) {
+            console.log(writeEntry);
+            writeEntry.file(function(file) {
+                console.log(file);
+                var reader = new FileReader();
+                reader.onerror = function(stuff) {
+                    log("error", stuff);
+                    log("\n");
+                    log (stuff.getMessage());
+                    log("\n");
+                };
+                reader.onloadend = function(e) {
+                    editor.getSession().setValue(e.target.result);
+                };
 
-      reader.readAsText(file);
+                reader.readAsText(file);
+            });
+        });
     });
-	});
+  
+  
 
-     
-     
-   });
-  
-  
-  set_progress(0, "Welcome");
-  console.log("ready");
-     editor = ace.edit("editor");
-    editor.setTheme("ace/theme/xcode");
-    editor.getSession().setMode("ace/mode/c_cpp");
   
 
 
-$("#program").click(function() {
-    set_progress(10, "Packaging file...");
-    var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
-    set_progress(20, "Uploading to compiler server...");
-    $.post( server_address + "/compile", { sketch: sketchfile, board: "arduino:avr:uno"}, function( data ) {
-        console.log(data);
-        if(!data.success){
-            set_progress(0, data.msg);
-            return console.error(data.stderr || data.msg);
+    $("#program").click(function() {
+        let board = $('#board_list').val();
+        if(!board || board === '' || board === 'none'){
+            display_console("", "Board not selected, please go to Tools > Board.");
+            return set_progress(0, "Error in finding board", true);
         }
-        set_progress(30, "Processing results...");
-        hexfileascii = atob(data.hex);
-        console.log("Got file contents, running hex fixer");
-        set_progress(40, "Decoding Intel Hex file...");
-        fixHex();
+        set_progress(0, "connecting to device");
+        ensure_connection(success => {
+            if (!success) {
+                return set_progress(0, 'Error in connecting to device.', true);
+            }
+            set_progress(10, "Packaging file...");
+            var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
+            set_progress(20, "Uploading to compiler server...");
+            display_console("Uploading to remote compiling server: " + server_address);
+            $.post(server_address + "/compile", {sketch: sketchfile, board}, function (data) {
+                console.log(data);
+                display_console(data.stdout, data.stderr, '\n\n');
+                if (!data.success) {
+                    set_progress(0, data.msg, true);
+                    return;//console.error(data.stderr || data.msg);
+                }
+                termmode = 0;
+                connection.tempBaud(boards[board].upload_speed, success=> {
+                    if(!success){
+                        display_console("", "Could not set baudrate.", '\n\n');
+                        return set_progress(0, "Error in preparing board", true);
+                    }
+                    set_progress(30, "Processing results...");
+                    hexfileascii = atob(data.hex);
+                    console.log("Got file contents, running hex fixer");
+                    set_progress(40, "Decoding Intel Hex file...");
+                    fixHex();
+                });
+            });
+        });
     });
-});
 
-$("#check").click(function() {
-    set_progress(10, "Packaging file...");
-    var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
-    set_progress(50, "Uploading to compiler server...");
-    $.post( server_address + "/compile", { sketch: sketchfile, board: "arduino:avr:uno"}, function( data ) {
-        console.log(data);
-        if(!data.success){
-            set_progress(0, data.msg);
-            return console.error(data.stderr || data.msg);
+    $("#check").click(function() {
+        if(!board || board === '' || board === 'none'){
+            display_console("", "Board not selected, please go to Tools > Board.");
+            return set_progress(0, "Error in finding board", true);
         }
-        set_progress(100, "Compiled Successfully!");
+        set_progress(10, "Packaging file...");
+        var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
+        set_progress(50, "Uploading to compiler server...");
+        display_console("Uploading to remote compiling server: " + server_address);
+        $.post( server_address + "/compile", { sketch: sketchfile, board}, function( data ) {
+            console.log(data);
+            display_console(data.stdout, data.stderr, '\n\n');
+            if(!data.success){
+                set_progress(0, data.msg, true);
+                return;//console.error(data.stderr || data.msg);
+            }
+            set_progress(100, "Compiled Successfully!");
+            display_console('Done Compiling! Have a nice day! :)', '', '\n\n');
+        });
     });
-});
 
 
-  
+
+/*
 // Handle the 'Connect' button
 document.querySelector('#connect_button').addEventListener('click', function() {
 
@@ -210,14 +376,16 @@ connection.connect(devicePath);
 document.querySelector('#demo_button').addEventListener('click', function() {
   $("#connect_box").toggle("explode");
   $("#dark").toggle("explode");
-});  
+});  */
   
-$( document ).keypress(function() {
-  $("#numbers").html("");
-  var lines = $("#editor").val().lineCount();
-  for(x = 1; x <= lines; x++) { 
-  $("#numbers").append(x+"\n"); }  
-});});
+    $( document ).keypress(function() {
+        $("#numbers").html("");
+        var lines = $("#editor").val().lineCount();
+        for(x = 1; x <= lines; x++) {
+            $("#numbers").append(x+"\n");
+        }
+    });
+});
 
 
 function stk500_program() {
@@ -320,8 +488,8 @@ var DTRRTSOff = { dtr: false, rts: false };
 
 function transmitPacket(buffer,delay) {
     setTimeout(function() {
-        if(verbose_logging) {
-            log(".");
+        display_console('.', '', '');
+        if(verbose_logging){
             var debug = "";
             for (x = 0; x < buffer.length; x++) {
                 debug += "[" + buffer.charCodeAt(x).toString(16) + "]";
@@ -379,7 +547,8 @@ function stk500_upload(heximage) {
     transmitPacket(d2b(command.ENTER_PROGMODE)+d2b(command.Sync_CRC_EOP),50);
     var blocksize = 128;
     blk = Math.ceil(heximage.length / blocksize);
-    if(verbose_logging) log("Binary data broken into "+blk+" blocks (block size is 128)\nComplete when you see "+blk+" dots: ")
+    termmode = 0;
+    display_console("Binary data broken into "+blk+" blocks (block size is 128)\nComplete when you see "+blk+" dots: \n\n", "", "\n");
     set_progress(80, "Serial upload...");
     for(b = 0; b < Math.ceil(heximage.length / blocksize); b++) {
         var currentbyte = blocksize * b;
@@ -390,7 +559,13 @@ function stk500_upload(heximage) {
         flashblock = flashblock + 64;
     }
     setTimeout(function () {
-        set_progress(100, "Serial programming finished."); termmode = 1;
+        connection.resetBaud(success => {
+            set_progress(100, "Serial programming finished.");
+            display_console("Upload Complete! Have a nice day! :)", success ? "" : "Could not reset baudrate", "\n\n");
+            termmode = 1;
+            if (!terminalwindow) connection.disconnect();
+            if (terminal) terminal.clear();
+        });
     },timer + 1000);
 
     timer = 0;
@@ -440,29 +615,18 @@ var str2ab = function(str) {
 /* i stole chrome's arduino serial port example, thanks guys for the great foundation to build up from. no idea what half this crap is. */
 
 var SerialConnection = function() {
-  this.connectionId = -1;
-  this.baud = 115200;
-  this.lineBuffer = "";
-  this.boundOnReceive = this.onReceive.bind(this);
-  this.boundOnReceiveError = this.onReceiveError.bind(this);
-  this.onConnect = new chrome.Event();
-  this.onReadLine = new chrome.Event();
-  this.onError = new chrome.Event();
-};
+    this.connectionId = -1;
+    this.baud = 115200;
+    this.lineBuffer = "";
 
+    this.boundOnReceive = this.onReceive.bind(this);
+    this.boundOnReceiveError = this.onReceiveError.bind(this);
+    serial.onReceive.addListener(this.boundOnReceive);
+    serial.onReceiveError.addListener(this.boundOnReceiveError);
 
-SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
-  if (!connectionInfo) {
-    log("Connection failed.");
-    return;
-  }
-  this.connectionId = connectionInfo.connectionId;
-  serial.onReceive.addListener(this.boundOnReceive);
-  serial.onReceiveError.addListener(this.boundOnReceiveError);
-  this.onConnect.dispatch();
-    serial.setControlSignals(connection.connectionId,DTRRTSOn,function(result) {
-      console.log("DTR on: " + result); });
-   
+    this.onConnect = new chrome.Event();
+    this.onReadLine = new chrome.Event();
+    this.onError = new chrome.Event();
 };
 
 
@@ -487,7 +651,7 @@ SerialConnection.prototype.onReceive = function(receiveInfo) {
     
     $("#terminal").append(buffer); var elem = document.getElementById('terminal');
     elem.scrollTop = elem.scrollHeight; } */
-  if(terminal) terminal.message(buffer);
+  if(terminal && termmode === 1) terminal.message(buffer);
   this.lineBuffer = "";
   var index;
   while ((index = this.lineBuffer.indexOf('\n')) >= 0) {
@@ -504,7 +668,7 @@ SerialConnection.prototype.onReceiveError = function(errorInfo) {
 };
 
 SerialConnection.prototype.getDevices = function(callback) {
-  serial.getDevices(callback)
+  serial.getDevices(callback);
 };
 
 
@@ -512,7 +676,17 @@ SerialConnection.prototype.getDevices = function(callback) {
     
     
 SerialConnection.prototype.connect = function(path) {
-  serial.connect(path, {bitrate: this.baud}, this.onConnectComplete.bind(this))
+  serial.connect(path, {bitrate: this.baud}, connectionInfo => {
+      if (!connectionInfo) {
+          log("Connection failed.");
+          return;
+      }
+      this.connectionId = connectionInfo.connectionId;
+      this.onConnect.dispatch();
+      serial.setControlSignals(connection.connectionId,DTRRTSOn,function(result) {
+          console.log("DTR on: " + result);
+      });
+  })
 };
 
 SerialConnection.prototype.send = function(msg) {
@@ -546,27 +720,38 @@ SerialConnection.prototype.setBaud = function(baud) {
     });
 };
 
+SerialConnection.prototype.tempBaud = function(baud, cb) {
+    if (this.connectionId < 0) {
+        throw 'Invalid connection';
+    }
+    serial.update(this.connectionId, {bitrate: baud}, success => {
+        if(success) {
+            console.log("Baud for connection set to " + baud + " temporarily");
+        }
+        else console.error("Could not set baud rate.");
+        cb(success);
+    });
+};
+
+SerialConnection.prototype.resetBaud = function(cb) {
+    if (this.connectionId < 0) {
+        throw 'Invalid connection';
+    }
+    serial.update(this.connectionId, {bitrate: this.baud}, success => {
+        if(success) {
+            console.log("Baud for connection set back to " + this.baud);
+        }
+        else console.error("Could not set baud rate.");
+        cb(success);
+    });
+};
+
+SerialConnection.prototype.isConnected = function() {
+    return this.connectionId > 0;
+};
 
 
-var connection = new SerialConnection();
-
-// Populate the list of available devices
-connection.getDevices(function(ports) {
-  // get drop-down port selector
-  var dropDown = document.querySelector('#port_list');
-  // clear existing options
-  dropDown.innerHTML = "";
-  // add new options
-  ports.forEach(function (port) {
-    var displayName = port["displayName"] + "("+port.path+")";
-    if (!displayName) displayName = port.path;
-    
-    var newOption = document.createElement("option");
-    newOption.text = displayName;
-    newOption.value = port.path;
-    dropDown.appendChild(newOption);
-  });
-});
+const connection = new SerialConnection();
 
 
 ////////
