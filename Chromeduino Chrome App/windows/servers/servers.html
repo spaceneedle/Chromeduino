@@ -5,12 +5,11 @@
     <title>Choose a Server</title>
 
     <link rel="stylesheet" href="servers.css" />
-    <link rel="stylesheet" href="../../resources/jquery-ui.min.css">
 
 </head>
 <body>
 
-<div class="header">
+<div class="header" style="display: none">
     <span class="errmsg">Your selected compile server is either out-dated, unavailable or non-existent. Please select a new one.</span>
     <span class="errclose">x</span>
 </div>
@@ -20,15 +19,8 @@
     <button id="serverSend" type="button">Connect</button>
 </div>
 
-<script id="server-item-template" type="text/x-handlebars-template">
-    <li class="server-item">
-
-    </li>
-</script>
-
-
 <script src="../../resources/jquery-2.1.1.min.js"></script>
-<script src="../../resources/jquery-ui.min.js"></script>
+<script src="../../resources/server_checking.js"></script>
 <script src="servers.js"></script>
 </body>
 </html>

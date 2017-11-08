@@ -110,7 +110,7 @@ class Arduino {
                             stdout = stdout.replace(this.dir, '~/arduino-1.8.5');
                             if(err){
                                 cleanup();
-                                return resolve({success: false, msg: errorCodes[err], code: err, stdout, stderr});
+                                return resolve({success: false, msg: errorCodes[err.code], code: err.code, stdout, stderr});
                             }
                             fs.readFile(path + '/compiled/' + codeFile + '.hex', 'base64', (err, hexcode)=>{
                                 if(err) {

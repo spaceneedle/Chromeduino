@@ -1,0 +1,67 @@
+body{
+    margin: 0;
+    background: #eaeaea
+}
+
+.header {
+    position: fixed;
+    width: calc(100% - 2.5em);
+    background: firebrick;
+    padding: 0.5em;
+    padding-right: 2em;
+    color: white;
+}
+
+.header .errclose {
+    display: inline-block;
+    position:absolute;
+    right: 1em;
+    top: 0.3em;
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 2em;
+    padding-bottom: 2px;
+}
+
+#serverSend {
+    width: 5em;
+    height: 100%;
+}
+
+#serverInput {
+    width: calc(100vw - 5em - 12px - 0.5em);
+    height: calc(100% - 6px);
+    margin-left: 2px;
+    padding-left: 0.5em;
+}
+
+.server-list {
+    list-style: none;
+    padding: 1em 0;
+    margin: 0;
+    overflow-y: auto;
+    height: calc(100vh - 4em - 2px);
+}
+
+.server-item {
+    cursor: pointer;
+    border-bottom: grey solid 1px;
+    transition: all 0.35s;
+    padding: 0.2em 1em;
+}
+
+.server-item:last-child {
+    border-bottom: none;
+}
+
+.server-item:hover {
+    background: lightgrey;
+    color: #444;
+}
