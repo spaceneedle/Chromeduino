@@ -49,7 +49,7 @@ body {
     color: maroon;
 }
 
-#port_list option[value="none"]{
+option[value="none"]{
     display: none;
 }
 
