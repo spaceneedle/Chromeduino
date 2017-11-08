@@ -8,19 +8,11 @@
     "description": "A compile server running on your local machine"
   },
   {
-    "name": "Local Test Server 2",
-    "address": "http://127.0.0.1:3000",
-    "location": "Under Your Nose",
-    "owner": "You",
-    "website": "http://example.com/self-promotion.html",
-    "description": "A compile server running on your local machine"
-  },
-  {
-    "name": "Local Test Server 3",
-    "address": "http://10.0.0.1:3000",
-    "location": "Under Your Nose",
-    "owner": "You",
-    "website": "http://example.com/self-promotion.html",
-    "description": "A compile server running on your local machine"
+    "name": "mrfrase3's dev box",
+    "address": "http://chromeduino.3mr.fr",
+    "location": "NY",
+    "owner": "mrfrase3",
+    "website": "http://3mr.fr",
+    "description": "A compile server running on a digital ocean droplet"
   }
 ]
