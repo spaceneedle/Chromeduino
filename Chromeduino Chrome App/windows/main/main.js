@@ -65,7 +65,7 @@ chrome.storage.sync.get('settings.server', function(data) {
     });
 });
 
-const set_progress = (percent, msg, isErrored, c1 = 'black', c2 = 'grey')=>{
+const set_progress = (percent, msg, isErrored, c1 = 'darkcyan', c2 = 'grey')=>{
     $('.progressbar-bar').css('background', `linear-gradient(to right, ${c1} , ${c1} ${percent}%, ${c2} ${percent}%, ${c2} )`);
     let label = $(".progress-label");
     if(msg) label.text(msg);
@@ -141,8 +141,8 @@ const display_ports = () => {
 
 var hexfile = "";
 var editor = null;
-var defaultsketch = "void setup()\n {\n \n }\n\nvoid loop()\n {\n \n }\n";
-var workingfile = "";
+var defaultsketch = "\n\nvoid setup(){\n  \n}\n\nvoid loop(){\n  \n}\n";
+var workingfile = null;
 var termmode = 1;
 var keytx = 0;
 
@@ -201,21 +201,11 @@ $( document ).ready(function(){
         chrome.storage.local.set({'settings.lastBoard': value});
     });
 
-    $("#newcheck").click(function(e) {
-        $("#dark").toggle();
-        $("#newsure").toggle("off");
-    });
-
-    $("#closenew").click(function(e) {
-        $("#dark").toggle();
-        $("#newsure").toggle("off");
-    });
-
     $("#newproject").click(function(e) {
-    $("#dark").toggle();
-    $("#newsure").toggle("off");
+        //$("#dark").toggle();
+        //$("#newsure").toggle("off");
         editor.getSession().setValue(defaultsketch);
-        workingfile = "";
+        workingfile = null;
     });
   
     $("#term").click(function(e) {
@@ -246,34 +236,51 @@ $( document ).ready(function(){
             });
         });
     });
-    
-    $("#exitterm").click(function(e) {
-        $("#terminal").toggle("off");
-        $("#exitterm").toggle("off");
-        $("#termstat").toggle("off");
-        keytx = 0;
+
+    let saving = false;
+
+    const saveFile = writableFileEntry => {
+        workingfile = writableFileEntry;
+        let errorHandler = (err) => {
+            console.error(err);
+            set_progress(0, 'Error occured and could not save file.', true);
+            saving = false;
+        };
+        writableFileEntry.createWriter(function(writer) {
+            writer.onerror = errorHandler;
+            writer.onwriteend = function(e) {
+                console.log('write complete');
+                set_progress(100, 'File Saved.');
+                saving = false;
+            };
+            writer.write(new Blob([editor.getSession().getValue()], {type: 'text/plain'}));
+        }, errorHandler);
+    };
+
+    $("#save").click(function(e) {
+        if(saving) return;
+        saving = true;
+        if(workingfile) chrome.fileSystem.getWritableEntry(workingfile, saveFile);
+        else chrome.fileSystem.chooseEntry({type: 'saveFile'}, saveFile);
     });
 
-    $( document ).keypress(function(e) {
-        if(keytx === 0) { return; }
-        $("#terminal").append(d2b(e.keyCode));
-        connection.send(d2b(e.keyCode));
-        var elem = document.getElementById('terminal');
-        elem.scrollTop = elem.scrollHeight;
+    $("#saveas").click(function(e) {
+        if(saving) return;
+        saving = true;
+        chrome.fileSystem.chooseEntry({type: 'saveFile'}, saveFile);
     });
 
-    $("#savefile").click(function(e) {
-        if(workingfile !== "") {
-            set_progress(0, "Saved.");
-            return;
+    $(document).keyup(e=>{
+        if(e.ctrlKey && !e.shiftKey && !e.altKey && (e.which === 83 || e.keyCode === 83)){
+            $("#save").click();
         }
     });
-    
   
     $("#load").click(function(){
-        chrome.fileSystem.chooseEntry({type: 'openWritableFile'}, function(writeEntry) {
-            console.log(writeEntry);
-            writeEntry.file(function(file) {
+        chrome.fileSystem.chooseEntry({type: 'openFile'}, function(readOnlyEntry) {
+            console.log(readOnlyEntry);
+            workingfile = readOnlyEntry;
+            readOnlyEntry.file(function(file) {
                 console.log(file);
                 var reader = new FileReader();
                 reader.onerror = function(stuff) {
@@ -281,9 +288,11 @@ $( document ).ready(function(){
                     log("\n");
                     log (stuff.getMessage());
                     log("\n");
+                    set_progress(0, 'Error loading file.', true);
                 };
                 reader.onloadend = function(e) {
                     editor.getSession().setValue(e.target.result);
+                    set_progress(100, 'File loaded.');
                 };
 
                 reader.readAsText(file);
@@ -308,7 +317,7 @@ $( document ).ready(function(){
                 return set_progress(0, 'Error in connecting to device.', true);
             }
             set_progress(10, "Packaging file...");
-            var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
+            let sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
             set_progress(20, "Uploading to compiler server...");
             display_console("Uploading to remote compiling server: " + server_address);
             $.post(server_address + "/compile", {sketch: sketchfile, board}, function (data) {
@@ -335,12 +344,13 @@ $( document ).ready(function(){
     });
 
     $("#check").click(function() {
+        let board = $('#board_list').val();
         if(!board || board === '' || board === 'none'){
             display_console("", "Board not selected, please go to Tools > Board.");
             return set_progress(0, "Error in finding board", true);
         }
         set_progress(10, "Packaging file...");
-        var sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
+        let sketchfile = editor.getSession().getValue();//btoa(editor.getSession().getValue());
         set_progress(50, "Uploading to compiler server...");
         display_console("Uploading to remote compiling server: " + server_address);
         $.post( server_address + "/compile", { sketch: sketchfile, board}, function( data ) {
