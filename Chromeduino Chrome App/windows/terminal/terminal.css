@@ -20,6 +20,11 @@
     padding-left: 1em;
 }
 
+.plotter {
+    width: calc(100%);
+    height: calc(100vh - 2em - 2.5em);
+}
+
 #cmdSend {
     width: 4em;
 }
