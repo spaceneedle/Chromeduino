@@ -1,0 +1,53 @@
+.header, .footer{
+    width: 100%;
+    height: 2em;
+}
+
+.header {
+    padding: 0 1em;
+    width: calc(100% - 2em);
+    background: lightgrey;
+}
+
+.terminal {
+    width: calc(100% - 1em);
+    height: calc(100vh - 2em - 2em);
+    white-space: pre-line;
+    overflow-y: scroll;
+    font-family: monospace;
+    user-select: text;
+    font-size: 1.3em;
+    padding-left: 1em;
+}
+
+.plotter {
+    width: calc(100%);
+    height: calc(100vh - 2em - 2.5em);
+}
+
+#cmdSend {
+    width: 4em;
+}
+
+#cmdInput {
+    width: calc(100vw - 4em - 12px);
+    height: calc(100% - 6px);
+    margin-left: 2px;
+}
+
+#autoScroll {
+    vertical-align: text-bottom;
+}
+
+#autoScroll,
+label[for=autoScroll] {
+    float: right;
+}
+
+button, select {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+}

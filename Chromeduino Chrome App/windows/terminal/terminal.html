@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Serial Monitor</title>
+
+    <link rel="stylesheet" href="terminal.css" />
+</head>
+<body>
+
+<div class="header">
+    <label for="baud">Baudrate: </label>
+    <select name="baud" id="baud">
+        <option value="110">110</option>
+        <option value="300">300</option>
+        <option value="1200">1200</option>
+        <option value="2400">2400</option>
+        <option value="4800">4800</option>
+        <option value="9600">9600</option>
+        <option value="14400">14400</option>
+        <option value="19200">19200</option>
+        <option value="38400">38400</option>
+        <option value="57600">57600</option>
+        <option value="115200">115200</option>
+    </select>
+    <button id="clear" type="button">Clear</button>
+    <label for="autoScroll">Autoscroll</label>
+    <input type="checkbox" id="autoScroll" name="autoScroll" checked />
+</div>
+<div class="terminal"></div>
+<div class="footer">
+    <input type="text" id="cmdInput" name="cmdInput" />
+    <button id="cmdSend" type="button">Send</button>
+</div>
+
+
+<script src="../../resources/jquery-2.1.1.min.js"></script>
+<script src="terminal.js"></script>
+
+</body>
+</html>
