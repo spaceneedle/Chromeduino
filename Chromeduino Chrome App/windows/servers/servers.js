@@ -1,4 +1,4 @@
-const servers_url = "https://raw.githubusercontent.com/mrfrase3/Chromeduino/server-implementation/servers.json";
+const servers_url = "https://raw.githubusercontent.com/spaceneedle/Chromeduino/master/servers.json";
 
 const use_server = address => {
     if(address.indexOf('http') !== 0) address = 'http://' + address;
