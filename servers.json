@@ -13,6 +13,14 @@
     "location": "NY",
     "owner": "mrfrase3",
     "website": "http://3mr.fr",
-    "description": "A compile server running on a digital ocean droplet"
+    "description": "A compile server running on a digital ocean droplet in New York."
+  },
+  {
+    "name": "mrfrase3's asia dev box",
+    "address": "http://asia.3mr.fr:3000",
+    "location": "SG",
+    "owner": "mrfrase3",
+    "website": "https://github.com/spaceneedle/Chromeduino/",
+    "description": "A compile server running on a digital ocean droplet in Singapore. You can also host a compile server, visit the github for more info."
   }
 ]
