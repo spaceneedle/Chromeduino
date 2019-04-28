@@ -1,3 +1,14 @@
+// var _gaq = _gaq || [];
+// _gaq.push(['_setAccount', 'UA-139182083-1']);
+// _gaq.push(['_trackPageview']);
+
+// (function() {
+//     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+//     ga.src = 'https://ssl.google-analytics.com/ga.js';
+//     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+// })();
+
+
 String.prototype.lines = function() { return this.split(/\r*\n/); }
 String.prototype.lineCount = function() { return this.lines().length; }
 
@@ -366,6 +377,10 @@ $( document ).ready(function(){
                     fixHex();
                 });
             });
+            // ga('send', 'event', 'compile-params', 'operation', 'program');
+            // ga('send', 'event', 'compile-params', 'server', server_address);
+            // ga('send', 'event', 'compile-params', 'board', board);
+            // ga('send', 'event', 'compile-params', 'sketch-size', sketchfile.length);
         });
     });
 
@@ -389,6 +404,10 @@ $( document ).ready(function(){
             set_progress(100, "Compiled Successfully!");
             display_console('Done Compiling! Have a nice day! :)', '', '\n\n');
         });
+        // ga('send', 'event', 'compile-params', 'operation', 'check');
+        // ga('send', 'event', 'compile-params', 'server', server_address);
+        // ga('send', 'event', 'compile-params', 'board', board);
+        // ga('send', 'event', 'compile-params', 'sketch-size', sketchfile.length);
     });
 
 
