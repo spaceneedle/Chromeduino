@@ -1,6 +1,6 @@
 {
-  "name": "Chromeduino",
-  "description": "Create Arduino-compatible sketches on Chromebook or Chrome Browser",
+  "name": "Chromeduino 2",
+  "description": "Create Arduino-compatible sketches on your Chromebook",
   "version": "2.0.1",
   "manifest_version": 2,
   "permissions": [
