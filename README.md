@@ -37,3 +37,8 @@ If you have a dev VPS or something lying around, why not help the community and 
  2. Launch the server with pm2 `pm2 start app.js -n chromeduino`
  3. Make it run on startup `pm2 save` and `pm2 startup` read the output of those commands.
  4. Edit the server.json file with your compile server's details and then submit a pull request. If you are unsure how to do that, post an issue with the details and we'll do it for you.
+
+
+### Notice of Non-Affiliation and Disclaimer:
+We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with Arduino AG or Google LLC (“Google”), or any of their subsidiaries or their affiliates. The official Arduino AG website can be found at https://www.arduino.cc
+The names "Chrome", "Chromebook", "Chromebox", "Arduino", and "Genuino" as well as related names, marks, emblems and images are registered trademarks of their respective owners.
