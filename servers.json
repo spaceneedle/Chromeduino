@@ -22,5 +22,13 @@
     "owner": "mrfrase3",
     "website": "https://github.com/spaceneedle/Chromeduino/",
     "description": "A compile server running on a digital ocean droplet in Singapore. You can also host a compile server, visit the github for more info."
+  },
+  {
+    "name": "Allan Taylor's Compile Server",
+    "address": "https://chromeduino.allantaylor.kiwi",
+    "location": "NZ",
+    "owner": "AllanTaylor314",
+    "website": "https://allantaylor.kiwi",
+    "description": "A compile server running on my personal server. Just 'cause"
   }
 ]
