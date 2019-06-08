@@ -22,6 +22,8 @@ app.get('/version', (req, res) => res.json({version, program: "chromeduino"}));
 
 app.get('/boards', (req, res) => res.json(arduino.boards));
 
+app.get('/libraries', (req, res) => res.json(arduino.libraries));
+
 app.post('/compile', (req, res) => {
     if(typeof req.body.sketch !== 'string' || typeof req.body.board !== 'string')
         return res.json({success: false, msg: "invalid parameters passed"});
