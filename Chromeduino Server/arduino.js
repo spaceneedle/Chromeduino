@@ -96,6 +96,7 @@ class Arduino {
     compile(code, board="arduino:avr:uno", verbose){
         return new Promise((resolve, reject) => {
             if(!this.boards[board]) return resolve({success: false, msg: "Unknown board provided"});
+            if(/#\s*include\s*<\.*\/.*>/.test(code)) resolve({success: false, msg: 'Security out-of-bounds'});
             verbose = verbose ? '-verbose' : '';
             tmp.dir({prefix: 'chromeduino-', unsafeCleanup: true}, (err, path, cleanup)=>{
                 if(err) return reject(err);
