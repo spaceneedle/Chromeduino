@@ -1,3 +1,29 @@
+chrome.Event = class {
+    constructor() {
+        this.listeners = [];
+    }
+    
+    addListener(f) {
+        if (!this.hasListener(f)) this.listeners.push(f);
+    }
+    
+    removeListener(f) {
+        this.listeners.splice(this.listeners.indexOf(f), 1);
+    }
+    
+    hasListener(f) {
+        return this.listeners.indexOf(f) !== -1;
+    }
+    
+    hasListeners() {
+        return !!this.listeners.length;
+    }
+    
+    dispatch(...data) {
+        this.listeners.forEach(f => f(...data));
+    }
+}
+
 class Terminal {
     constructor(baud){
         $('#baud').val(baud);
