@@ -1,5 +1,13 @@
 [
   {
+    "name": "3.0 Compile Server (Full Library Support)",
+    "address": "https://legacy.duino.app",
+    "location": "AU",
+    "owner": "Duino App",
+    "website": "https://duino.app",
+    "description": "The new compile server with All libraries installed. Hosted with AWS in sydney. Just call a library to use it."
+  },
+  {
     "name": "Local Test Server",
     "address": "http://localhost:3000",
     "location": "Under Your Nose",
