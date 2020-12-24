@@ -60,3 +60,15 @@ option[value="none"]{
 #board_list {
     max-width: 10em;
 }
+
+.pure-menu-horizontal > .pure-menu-list {
+    width: 100%;
+}
+
+.v3-link {
+    float: right;
+}
+.v3-link > a {
+    color: red;
+    font-weight: 600;
+}

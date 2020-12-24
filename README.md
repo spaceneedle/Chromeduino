@@ -1,3 +1,5 @@
+## [Check Out the Version 3 Beta!](https://duino.app)
+
 ## About
 
 The chrome app uses the serial API on the chrome browser to program AVR arduinos with a serial bootloader that is avrdude compatible (Arduino Uno, Mega, etc).
