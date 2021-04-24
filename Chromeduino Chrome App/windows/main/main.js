@@ -93,12 +93,37 @@ const open_server_menu = (showError) => {
     });
 };
 
-chrome.storage.sync.get('settings.server', function(data) {
-    server_address = data['settings.server'] || "";
-    if(server_address === "") return open_server_menu();
-    check_server(server_address, (success, version)=>{
-        if(!success) open_server_menu(true);
-        else new_server();
+const open_warning = (cb = () => {}) => {
+    if(terminalwindow) return terminalwindow.show();
+    chrome.app.window.create("windows/warning/warning.html", {
+        "bounds": {
+            "width": 500,
+            "height": 300
+        }
+    }, warnwin => {
+        chrome.app.window.current().hide();
+        warningwindow = warnwin;
+        warningwindow.onClosed.addListener(()=>{
+            serverwindow = null;
+            if(server_address === "") chrome.app.window.current().close();
+        });
+        warningwindow.contentWindow.onContinue = new chrome.Event;
+        warningwindow.contentWindow.onContinue.addListener(() => {
+            warningwindow.close();
+            chrome.app.window.current().show();
+            cb();
+        });
+    });
+};
+
+open_warning(() => {
+    chrome.storage.sync.get('settings.server', function(data) {
+        server_address = data['settings.server'] || "";
+        if(server_address === "") return open_server_menu();
+        check_server(server_address, (success, version)=>{
+            if(!success) open_server_menu(true);
+            else new_server();
+        });
     });
 });
 

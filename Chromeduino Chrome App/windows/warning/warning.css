@@ -1,0 +1,31 @@
+.main {
+  text-align: center;
+}
+
+h1 {
+  font-size: 4em;
+}
+
+p {
+  font-size: 1.2em;
+}
+
+.continue,
+.install {
+  cursor: pointer;
+}
+
+.install {
+  display: inline-block;
+  padding: 8px;
+  background-color: #C8E6C9;
+  font-size: 1.5em;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.continue {
+  text-decoration: underline;
+  font-size: 1.1em;
+}
