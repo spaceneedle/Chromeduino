@@ -1,35 +1,11 @@
 [
   {
-    "name": "3.0 Compile Server (Full Library Support)",
-    "address": "https://legacy.duino.app",
+    "name": "3.0 Compile Server (Legacy Support)",
+    "address": "https://compile.duino.app",
     "location": "AU",
     "owner": "Duino App",
     "website": "https://duino.app",
-    "description": "The new compile server with All libraries installed. Hosted with AWS in sydney. Just call a library to use it."
-  },
-  {
-    "name": "Local Test Server",
-    "address": "http://localhost:3000",
-    "location": "Under Your Nose",
-    "owner": "You",
-    "website": "http://example.com/self-promotion.html",
-    "description": "A compile server running on your local machine"
-  },
-  {
-    "name": "mrfrase3's dev box",
-    "address": "http://chromeduino.3mr.fr",
-    "location": "NY",
-    "owner": "mrfrase3",
-    "website": "http://3mr.fr",
-    "description": "A compile server running on a digital ocean droplet in New York."
-  },
-  {
-    "name": "mrfrase3's asia dev box",
-    "address": "http://asia.3mr.fr:3000",
-    "location": "SG",
-    "owner": "mrfrase3",
-    "website": "https://github.com/spaceneedle/Chromeduino/",
-    "description": "A compile server running on a digital ocean droplet in Singapore. You can also host a compile server, visit the github for more info."
+    "description": "The legacy compatable compiling on the new server."
   },
   {
     "name": "Allan Taylor's Compile Server",
